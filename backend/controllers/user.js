@@ -5,8 +5,8 @@ const {
   generateRefreshToken,
 } = require("../middlewares/jwt");
 const jwt = require("jsonwebtoken");
-
-const { response } = require("express");
+const { sendMail } = require("../ultils/sendmail");
+const crypto = require("crypto");
 
 const register = asyncHandler(async (req, res) => {
   const { email, password, firstName, lastName } = req.body;
@@ -94,23 +94,71 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 });
 
 const logout = asyncHandler(async (req, res) => {
-  const cookie = req.cookies
+  const cookie = req.cookies;
   if (!cookie || !cookie.refreshToken)
     throw new Error("No refresh token in cookies");
   //xoas refresh token o db
   await User.findOneAndUpdate(
     { refreshToken: cookie.refreshToken },
-    { refreshToken: '' },
+    { refreshToken: "" },
     { new: true }
   );
   //xoa refresh token o cookie trinh duyet
   res.clearCookie("refreshToken", { httpOnly: true, secure: true });
   return res.status(200).json({
-    sucess:true,
-    mes:'Logout'
-})
+    sucess: true,
+    mes: "Logout",
+  });
 });
 
+// reset pasword
+//server check email co hop le k => gui mail + kem theo link
+// client check mail => click link
+// client gui api kem theo token
+// check token co giong voi token ma email gui hay k
+// change pass
+
+const forgotpassword = asyncHandler(async (req, res) => {
+  const { email } = req.query;
+  if (!email) throw new Error("Missing email");
+  const user = await User.findOne({ email });
+  if (!user) throw new Error("User not found");
+  const resetToken = user.createPasswordChangedToken();
+  await user.save();
+
+  const html = `Xin vui long click vao link duoi day de thay doi mat khau.Link nay se het han sau 15p<a href=${process.env.URL_SERVER}/api/user/rest-password/${resetToken} > Clik here</a> `;
+  const data = {
+    email,
+    html,
+  };
+  const rs = await sendMail(data);
+  return res.status(200).json({
+    sucess: true,
+    rs,
+  });
+});
+const resetPassword = asyncHandler(async (req, res) => {
+  const { token, password } = req.body;
+  if (!password || !token) throw new Error("Missing imputs");
+  const passwordRestToken = crypto
+    .createHash("sha256")
+    .update(token)
+    .digest("hex");
+  const user = await User.findOne({
+    passwordRestToken,
+    passwordRestExpires: { $gt: Date.now() },
+  });
+  if (!user) throw new Error("Invalid reset token");
+  user.password = password;
+  user.passwordRestToken = undefined;
+  user.passwordChangeAt = Date.now();
+  user.passwordRestExpires = undefined;
+  await user.save();
+  return res.status(200).json({
+    success: user ? true : false,
+    mes: user ? "Update password" : "Something went wrong",
+  });
+});
 
 module.exports = {
   register,
@@ -118,4 +166,6 @@ module.exports = {
   getCurrent,
   refreshAccessToken,
   logout,
+  forgotpassword,
+  resetPassword,
 };

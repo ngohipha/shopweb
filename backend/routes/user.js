@@ -6,5 +6,13 @@ router.post("/login", controller.login);
 router.get("/current", verifyAccessToken, controller.getCurrent);
 router.post("/refreshtoken", controller.refreshAccessToken);
 router.get("/logout", controller.logout);
+router.get("/forgotpassword", controller.forgotpassword);
+router.post("/resetpassword", controller.resetPassword);
+
+
 
 module.exports = router;
+
+
+// create (post) + put - body
+// get + delete - query 
