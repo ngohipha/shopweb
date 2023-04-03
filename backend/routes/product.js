@@ -5,6 +5,7 @@ const { verifyAccessToken, isAdmin } = require("../middlewares/verifyToken");
 router.post("/", [verifyAccessToken, isAdmin], controller.createProduct);
 
 router.get("/", controller.getProducts);
+router.put("/ratings", [verifyAccessToken], controller.ratings);
 
 
 
