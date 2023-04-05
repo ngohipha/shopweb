@@ -12,6 +12,9 @@ router.get("/",[verifyAccessToken, isAdmin], controller.getUsers);
 router.delete("/",[verifyAccessToken, isAdmin], controller.deleteUsers);
 router.put("/updateuser",[verifyAccessToken], controller.updateUsers);
 router.put("/updateuserbyadmin/:uid",[verifyAccessToken, isAdmin], controller.updateUsersByAdmin);
+router.put("/address",[verifyAccessToken], controller.updateUserAddress);
+router.put("/cart",[verifyAccessToken], controller.updateCart);
+
 
 
 module.exports = router;

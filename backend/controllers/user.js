@@ -7,6 +7,7 @@ const {
 const jwt = require("jsonwebtoken");
 const { sendMail } = require("../ultils/sendmail");
 const crypto = require("crypto");
+const { truncate } = require("fs/promises");
 
 const register = asyncHandler(async (req, res) => {
   const { email, password, firstName, lastName } = req.body;
@@ -206,6 +207,55 @@ const updateUsersByAdmin = asyncHandler(async (req, res) => {
     updateUsers: response ? response : "Some thing went wrong",
   });
 });
+const updateUserAddress = asyncHandler(async (req, res) => {
+  const { _id } = req.user;
+  if (!req.body.address) throw new Error("Missing imputs");
+  const response = await User.findByIdAndUpdate(
+    _id,
+    { $push: { address: req.body.address } },
+    {
+      new: true,
+    }
+  ).select("-password -role -refreshToken");
+  return res.status(200).json({
+    sucess: response ? true : false,
+    updateUserAddress: response ? response : "Some thing went wrong",
+  });
+});
+const updateCart = asyncHandler(async (req, res) => {
+  const { _id } = req.user;
+  const { pid, quantity, color } = req.body;
+  if (!pid || !quantity || !color) throw new Error("Missing inputs");
+  const user = await User.findById(_id).select("cart");
+  const alreadyProduct = user?.cart?.find(
+    (el) => el.product.toString() === pid
+  );
+  if (alreadyProduct) {
+    const index = user.cart.findIndex(
+      (el) => el.product.toString() === pid && el.color === color
+    );
+    if (index !== -1) {
+      user.cart[index].quantity = quantity;
+    } else {
+      user.cart.push({ product: pid, quantity, color });
+    }
+    const response = await user.save();
+    return res.status(200).json({
+      success: response ? true : false,
+      updateCart: response ? response : "Something went wrong",
+    });
+  } else {
+    const response = await User.findByIdAndUpdate(
+      _id,
+      { $push: { cart: { product: pid, quantity, color } } },
+      { new: true }
+    );
+    return res.status(200).json({
+      success: response ? true : false,
+      updateCart: response ? response : "Something went wrong",
+    });
+  }
+});
 
 module.exports = {
   register,
@@ -219,4 +269,6 @@ module.exports = {
   deleteUsers,
   updateUsers,
   updateUsersByAdmin,
+  updateUserAddress,
+  updateCart,
 };

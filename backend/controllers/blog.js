@@ -1,5 +1,6 @@
 const Blog = require("../models/blog");
 const asyncHandler = require("express-async-handler");
+const { patch } = require("../routes/blog");
 
 const createNewBlog = asyncHandler(async (req, res) => {
   try {
@@ -65,9 +66,7 @@ const likeBlog = asyncHandler(async (req, res) => {
   const { bid } = req.params;
   if (!bid) throw new Error("Missing inputs");
   const blog = await Blog.findById(bid);
-  const alreadyDislike = blog?.dislikes.find(
-    (el) => el.toString() === _id
-  );
+  const alreadyDislike = blog?.dislikes.find((el) => el.toString() === _id);
   if (alreadyDislike) {
     const response = await Blog.findByIdAndUpdate(
       bid,
@@ -108,9 +107,7 @@ const dislikeBlog = asyncHandler(async (req, res) => {
   const { bid } = req.params;
   if (!bid) throw new Error("Missing inputs");
   const blog = await Blog.findById(bid);
-  const alreadyliked = blog?.likes.find(
-    (el) => el.toString() === _id
-  );
+  const alreadyliked = blog?.likes.find((el) => el.toString() === _id);
   if (alreadyliked) {
     const response = await Blog.findByIdAndUpdate(
       bid,
@@ -145,10 +142,52 @@ const dislikeBlog = asyncHandler(async (req, res) => {
     });
   }
 });
+const getBlog = asyncHandler(async (req, res) => {
+  const { bid } = req.params;
+  const blog = await Blog.findByIdAndUpdate(
+    bid,
+    { $inc: { numberView: 1 } },
+    { new: true }
+  )
+    .populate("likes", "firstName lastName")
+    .populate("dislikes", "firstName lastName");
+  return res.json({
+    success: blog ? true : false,
+    rs: blog,
+  });
+});
+
+const deleteBlog = asyncHandler(async (req, res) => {
+  const { bid } = req.params;
+  const blog = await Blog.findByIdAndDelete(
+    bid
+  )
+  return res.json({
+    success: blog ? true : false,
+    deleteBlog: blog || 'Something went wrong',
+  });
+});
+
+const uploadImagesBlog = asyncHandler(async (req, res) => {
+  const { bid } = req.params;
+  if (!req.file) throw new Error("Missing inputs");
+  const response = await Blog.findByIdAndUpdate(
+    bid,
+    {image: req.file.path},
+    { new: true }
+  );
+  return res.status(200).json({
+    status: response ? true : false,
+    updatedBlog: response ? response : "Cannot upload images blog",
+  });
+});
 module.exports = {
   createNewBlog,
   updateBlog,
   getBlogs,
   likeBlog,
   dislikeBlog,
+  getBlog,
+  deleteBlog,
+  uploadImagesBlog
 };
