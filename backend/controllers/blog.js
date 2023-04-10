@@ -1,6 +1,5 @@
 const Blog = require("../models/blog");
 const asyncHandler = require("express-async-handler");
-const { patch } = require("../routes/blog");
 
 const createNewBlog = asyncHandler(async (req, res) => {
   try {

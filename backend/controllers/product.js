@@ -154,6 +154,15 @@ const uploadImagesProduct = asyncHandler(async (req, res) => {
     updatedProduct: response ? response : "Cannot upload images product",
   });
 });
+
+
+const insertData = asyncHandler(async (req, res) => {
+  
+  return res.status(200).json({
+    status: response ? true : false,
+    updatedProduct: response ? response : "Cannot upload images product",
+  });
+});
 module.exports = {
   createProduct,
   getProduct,
