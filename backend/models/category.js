@@ -10,7 +10,9 @@ const categorySchema = new mongoose.Schema(
       brand: {
         type: String,
         required: true,
-        index: { unique: false }, // change to allow duplicates
+      },
+      image: {
+        type: String,
       },
     },
     { timestamps: true }

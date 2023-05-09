@@ -9,11 +9,11 @@ const createCategory = asyncHandler(async (req, res) => {
   });
 });
 
-const getALlCategory = asyncHandler(async (req, res) => {
-  const response = await Category.find().select("title _id");
+const getAllCategory = asyncHandler(async (req, res) => {
+  const response = await Category.find()
   return res.json({
     success: response ? true : false,
-    getALlCategory: response ? response : "Cannot getAll  category",
+    getAllCategory: response ? response : "Cannot getAll  category",
   });
 });
 
@@ -38,7 +38,7 @@ const deleteCategory = asyncHandler(async (req, res) => {
 });
 module.exports = {
   createCategory,
-  getALlCategory,
+  getAllCategory,
   updateCategory,
   deleteCategory,
 };

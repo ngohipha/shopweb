@@ -3,7 +3,7 @@ const controller = require("../controllers/category");
 const { verifyAccessToken, isAdmin } = require("../middlewares/verifyToken");
 
 router.post("/", [verifyAccessToken, isAdmin], controller.createCategory);
-router.get("/",  controller.getALlCategory);
+router.get("/",  controller.getAllCategory);
 router.put("/:cid", [verifyAccessToken, isAdmin], controller.updateCategory);
 router.delete("/:cid", [verifyAccessToken, isAdmin], controller.deleteCategory);
 

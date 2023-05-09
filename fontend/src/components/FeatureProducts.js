@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Product, ProductCard } from "./";
+import { ProductCard } from "./";
 import { apiGetProducts } from "../apis";
 const FeatureProducts = () => {
   const [products, setProducts] = useState(null);
@@ -22,7 +22,7 @@ const FeatureProducts = () => {
       <div className="flex flex-wrap mt-[15px] mx-[-10px]">
         {products?.map((el) => (
           <ProductCard
-            key={el.id}
+            key={el._id}
             image={el.thumb}
             title={el.title}
             totalRatings={el.totalRatings}
@@ -40,18 +40,15 @@ const FeatureProducts = () => {
         <div className="flex flex-col justify-between w-[24%] gap-4">
           <img
             src="https://cdn.shopify.com/s/files/1/1903/4853/files/banner2-bottom-home2_400x.jpg?v=1613166661"
-            className="h-[48%] object-contain"
+            className="h-[48%] object-contain" alt=""
           />
-          <img
-            src="https://cdn.shopify.com/s/files/1/1903/4853/files/banner3-bottom-home2_400x.jpg?v=1613166661"
-          />
+          <img src="https://cdn.shopify.com/s/files/1/1903/4853/files/banner3-bottom-home2_400x.jpg?v=1613166661" alt="" />
         </div>
 
         <img
           src="https://cdn.shopify.com/s/files/1/1903/4853/files/banner4-bottom-home2_92e12df0-500c-4897-882a-7d061bb417fd_400x.jpg?v=1613166661"
           alt=""
           className="w-1/4 object-contain"
-
         />
       </div>
     </div>
