@@ -1,13 +1,60 @@
 import React, { useState, useCallback } from "react";
 import { InputField, Button } from "../../components";
+import { apiRegister, apiLogin } from "../../apis";
+import Swal from "sweetalert2";
+import { useNavigate } from "react-router-dom";
+import path from "../../ultils/path";
+import { register } from "../../store/user/userSlice";
+import { useDispatch } from "react-redux";
+
 const Login = () => {
+  const navigate = useNavigate();
+  const dispath = useDispatch();
   const [payload, setPayload] = useState({
     email: "",
     password: "",
-    name: "",
+    firstName: "",
+    lastName: "",
+    mobile: "",
   });
   const [isRegister, setIsRegister] = useState(false);
-  const handleSubmit = useCallback(() => {}, [payload]);
+  const resetPayload = () => {
+    setPayload({
+      email: "",
+      password: "",
+      firstName: "",
+      lastName: "",
+      mobile: "",
+    });
+  };
+  const handleSubmit = useCallback(async () => {
+    const { firstname, lastname, mobile, ...data } = payload;
+    if (isRegister) {
+      const response = await apiRegister(payload);
+      if (response.success) {
+        Swal.fire("Congratulations", response.mes, "success").then(() => {
+          setIsRegister(false);
+          resetPayload();
+        });
+      } else {
+        Swal.fire("Oop!", response.mes, "error");
+      }
+    } else {
+      const rs = await apiLogin(data);
+      if (rs.success) {
+        dispath(
+          register({
+            isLoggedIn: true,
+            token: rs.accessToken,
+            userData: rs.userData,
+          })
+        );
+        navigate(`/${path.HOME}`);
+      } else {
+        Swal.fire("Oop!", rs.mes, "error");
+      }
+    }
+  }, [payload, isRegister]);
   return (
     <div className="w-screen h-screen relative">
       <img
@@ -23,17 +70,30 @@ const Login = () => {
           </h1>
 
           {isRegister && (
-            <InputField
-              value={payload.name}
-              setValue={setPayload}
-              nameKey="name"
-            />
+            <div className="flex items-center gap-2">
+              <InputField
+                value={payload.firstName}
+                setValue={setPayload}
+                nameKey="firstName"
+              />
+              <InputField
+                value={payload.lastName}
+                setValue={setPayload}
+                nameKey="lastName"
+              />
+              <InputField
+                value={payload.mobile}
+                setValue={setPayload}
+                nameKey="mobile"
+              />
+            </div>
           )}
           <InputField
             value={payload.email}
             setValue={setPayload}
             nameKey="email"
           />
+
           <InputField
             value={payload.password}
             setValue={setPayload}
@@ -45,17 +105,27 @@ const Login = () => {
             handleOnclick={handleSubmit}
           />
           <div className="flex items-center justify-between my-2 w-full text-sm">
-            {!isRegister && <span className="text-blue-500 hover:underline cursor-pointer">
-              Forgot your account?
-            </span>}
-            {!isRegister && <span onClick={()=> setIsRegister(true)} 
-             className="text-blue-500 hover:underline cursor-pointer">
-              Create account
-            </span>}
-            {isRegister && <span onClick={()=> setIsRegister(false)} 
-             className="text-blue-500 hover:underline cursor-pointer">
-              Go Login
-            </span>}
+            {!isRegister && (
+              <span className="text-blue-500 hover:underline cursor-pointer">
+                Forgot your account?
+              </span>
+            )}
+            {!isRegister && (
+              <span
+                onClick={() => setIsRegister(true)}
+                className="text-blue-500 hover:underline cursor-pointer"
+              >
+                Create account
+              </span>
+            )}
+            {isRegister && (
+              <span
+                onClick={() => setIsRegister(false)}
+                className="text-blue-500 hover:underline cursor-pointer"
+              >
+                Go Login
+              </span>
+            )}
           </div>
         </div>
       </div>

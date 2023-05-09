@@ -19,6 +19,7 @@
     "react-toastify": "^9.1.2",
     "redux-persist": "^6.0.0",
     "slick-carousel": "^1.8.1",
+    "sweetalert2": "^11.7.5",
     "tailwindcss-line-clamp": "^1.0.5",
     "web-vitals": "^2.1.4"
   },

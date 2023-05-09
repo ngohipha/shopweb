@@ -1,10 +1,25 @@
 import { configureStore } from '@reduxjs/toolkit';
 import appSlice from './app/appSlice';
 import productSlice  from './products/productSlice';
+import storage from 'redux-persist/lib/storage'
+import { persistReducer, persistStore } from 'redux-persist';
+import userSlice from './user/userSlice';
 
-export const store = configureStore({
+const commonuserConfig ={
+  key:'shop/user',
+  storage
+}
+const userConfig = {
+  ...commonuserConfig,
+  whitelist: ['isLoggedIn','token']
+}
+
+ export const store = configureStore({
   reducer: {
     app : appSlice,
-    products: productSlice
+    products: productSlice,
+    user: persistReducer(userConfig , userSlice )
   },
 });
+
+export const persistor =  persistStore(store)
