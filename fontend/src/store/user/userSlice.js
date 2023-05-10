@@ -9,7 +9,6 @@ export const userSlice = createSlice({
   },
   reducers: {
     register: (state,action)=>{
-        console.log(action)
         state.isLoggedIn = action.payload.isLoggedIn
         state.current = action.payload.userData
         state.token = action.payload.token

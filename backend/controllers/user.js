@@ -31,49 +31,134 @@ const makeToken = require("uniqid");
 // });
 
 // register xac thuc mail
+// const register = asyncHandler(async (req, res) => {
+//   const { email, password, firstName, lastName, mobile } = req.body;
+//   if (!email || !password || !firstName || !lastName || !mobile)
+//     return res.status(400).json({
+//       success: false,
+//       mes: "Missing inputs",
+//     });
+//   const user = await User.findOne({ email });
+//   if (user) throw new Error("User has existed!");
+//   else {
+//     const token = makeToken();
+//     res.cookie(
+//       "dataregister",
+//       { ...req.body, token },
+//       {
+//         httpOnly: true,
+//         maxAge: 15 * 60 * 1000,
+//       }
+//     );
+//     const html = `Xin vui long click vao link duoi day de xac thuc mat khau.Link nay se het han sau 15p<a href=${process.env.URL_SERVER}/api/user/finalregister/${token} > Clik here</a> `;
+//     await sendMail({ email, html, subject: "Xác Thực Mail" });
+//     return res.json({
+//       success: true,
+//       mes: "Please check your email to active account",
+//     });
+//   }
+// });
+
 const register = asyncHandler(async (req, res) => {
   const { email, password, firstName, lastName, mobile } = req.body;
-  if (!email || !password || !firstName || !lastName || !mobile)
+  if (!email || !password || !firstName || !lastName || !mobile) {
     return res.status(400).json({
       success: false,
       mes: "Missing inputs",
     });
+  }
+
   const user = await User.findOne({ email });
-  if (user) throw new Error("User has existed!");
-  else {
+  if (user) {
+    throw new Error("User has existed!");
+  } else {
     const token = makeToken();
-    res.cookie(
-      "dataregister",
-      { ...req.body, token },
-      {
-        httpOnly: true,
-        maxAge: 15 * 60 * 1000,
-      }
-    );
-    const html = `Xin vui long click vao link duoi day de xac thuc mat khau.Link nay se het han sau 15p<a href=${process.env.URL_SERVER}/api/user/finalregister/${token} > Clik here</a> `;
+    await User.create({
+      email,
+      password,
+      firstName,
+      lastName,
+      mobile,
+      registrationToken: token,
+    });
+    const html = `Xin vui lòng click vào link dưới đây để xác thực tài khoản. Link này sẽ hết hạn sau 15 phút: <a href=${process.env.URL_SERVER}/api/user/finalregister/${token}>Click here</a>`;
     await sendMail({ email, html, subject: "Xác Thực Mail" });
     return res.json({
       success: true,
-      mes: "Please check your email to active account",
+      mes: "Please check your email to activate your account",
     });
   }
 });
+// xác thực lưu trên database 
+// const finalRegister = asyncHandler(async (req, res) => {
+//   const { token } = req.params;
+//   const registrationData = await RegistrationData.findOne({ token });
+  
+//   if (!registrationData) {
+//     return res.redirect(`${process.env.CLIENT_URL}/finalregister/failed`);
+//   }
+
+//   const newUser = await User.create({
+//     email: registrationData.email,
+//     password: registrationData.password,
+//     mobile: registrationData.mobile,
+//     firstName: registrationData.firstName,
+//     lastName: registrationData.lastName,
+//   });
+
+//   if (newUser) {
+//     await RegistrationData.deleteOne({ token });
+//     return res.redirect(`${process.env.CLIENT_URL}/finalregister/success`);
+//   } else {
+//     return res.redirect(`${process.env.CLIENT_URL}/finalregister/failed`);
+//   }
+// });
+
 const finalRegister = asyncHandler(async (req, res) => {
-  const cookie = req.cookies;
   const { token } = req.params;
-  if (!cookie || cookie?.dataregister?.token !== token)
+  const user = await User.findOne({ registrationToken: token });
+
+  if (!user) {
     return res.redirect(`${process.env.CLIENT_URL}/finalregister/failed`);
+  }
+
   const newUser = await User.create({
-    email: cookie?.dataregister?.email,
-    password: cookie?.dataregister?.password,
-    mobile: cookie?.dataregister?.mobile,
-    firstName: cookie?.dataregister?.firstName,
-    lastName: cookie?.dataregister?.lastName,
+    email: user.email,
+    password: user.password,
+    mobile: user.mobile,
+    firstName: user.firstName,
+    lastName: user.lastName,
   });
-  if (newUser)
+
+  if (newUser) {
+    user.registrationToken = undefined;
+    await User.deleteMany({ registrationToken: null });
     return res.redirect(`${process.env.CLIENT_URL}/finalregister/success`);
-  else return res.redirect(`${process.env.CLIENT_URL}/finalregister/failed`);
+  } else {
+    return res.redirect(`${process.env.CLIENT_URL}/finalregister/failed`);
+  }
 });
+//luu tren cookie
+// const finalRegister = asyncHandler(async (req, res) => {
+//   const cookie = req.cookies;
+//   const { token } = req.params;
+//   if (!cookie || cookie?.dataregister?.token !== token) {
+//     res.clearCookie("dataregister");
+//     return res.redirect(`${process.env.CLIENT_URL}/finalregister/failed`);
+//   }
+
+//   const newUser = await User.create({
+//     email: cookie?.dataregister?.email,
+//     password: cookie?.dataregister?.password,
+//     mobile: cookie?.dataregister?.mobile,
+//     firstName: cookie?.dataregister?.firstName,
+//     lastName: cookie?.dataregister?.lastName,
+//   });
+//   res.clearCookie("dataregister");
+//   if (newUser)
+//     return res.redirect(`${process.env.CLIENT_URL}/finalregister/success`);
+//   else return res.redirect(`${process.env.CLIENT_URL}/finalregister/failed`);
+// });
 // refresh token => cap moi access token
 // access token => xac thuc ng dung , phan quyen nguoi dung
 const login = asyncHandler(async (req, res) => {
@@ -170,14 +255,14 @@ const logout = asyncHandler(async (req, res) => {
 // change pass
 
 const forgotpassword = asyncHandler(async (req, res) => {
-  const { email } = req.query;
+  const { email } = req.body;
   if (!email) throw new Error("Missing email");
   const user = await User.findOne({ email });
   if (!user) throw new Error("User not found");
   const resetToken = user.createPasswordChangedToken();
   await user.save();
 
-  const html = `Xin vui long click vao link duoi day de thay doi mat khau.Link nay se het han sau 15p<a href=${process.env.URL_SERVER}/api/user/rest-password/${resetToken} > Clik here</a> `;
+  const html = `Xin vui long click vao link duoi day de thay doi mat khau.Link nay se het han sau 15p<a href=${process.env.CLIENT_URL}/reset-password/${resetToken} > Clik here</a> `;
   const data = {
     email,
     html,
@@ -185,8 +270,10 @@ const forgotpassword = asyncHandler(async (req, res) => {
   };
   const rs = await sendMail(data);
   return res.status(200).json({
-    success: true,
-    rs,
+    success: rs.response?.includes("OK") ? true : false,
+    mes: rs.response?.includes("OK")
+      ? "Hãy check mail của bạn "
+      : "Mail đã có lỗi hãy thử lại sau ",
   });
 });
 const resetPassword = asyncHandler(async (req, res) => {

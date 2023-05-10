@@ -1,16 +1,16 @@
 import React, { useState, useCallback } from "react";
 import { InputField, Button } from "../../components";
-import { apiRegister, apiLogin } from "../../apis";
+import { apiRegister, apiLogin, apiForgotPassword } from "../../apis";
 import Swal from "sweetalert2";
-import { useNavigate , useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import path from "../../ultils/path";
 import { register } from "../../store/user/userSlice";
 import { useDispatch } from "react-redux";
+import {toast} from 'react-toastify'
 
 const Login = () => {
   const navigate = useNavigate();
   const dispath = useDispatch();
-  const location = useLocation();
   const [payload, setPayload] = useState({
     email: "",
     password: "",
@@ -18,6 +18,7 @@ const Login = () => {
     lastName: "",
     mobile: "",
   });
+  const [isForgotPassWord, setisForgotPassWord] = useState(false);
   const [isRegister, setIsRegister] = useState(false);
   const resetPayload = () => {
     setPayload({
@@ -27,6 +28,17 @@ const Login = () => {
       lastName: "",
       mobile: "",
     });
+  };
+  const [email, setEmail] = useState("");
+  // const handleEmailChange = (event) => {
+  //   setEmail(event.target.value);
+  // }
+  const handleForgotPassword = async () => {
+    const response = await apiForgotPassword({ email });
+    if(response.success){
+      setisForgotPassWord(false)
+      toast.success(response.mes)
+    }else toast.info(response.mes)
   };
   const handleSubmit = useCallback(async () => {
     const { firstname, lastname, mobile, ...data } = payload;
@@ -58,6 +70,32 @@ const Login = () => {
   }, [payload, isRegister]);
   return (
     <div className="w-screen h-screen relative">
+      {isForgotPassWord && (
+        <div className="absolute top-0 animate-shadow-pop-tr left-0  bottom-0 items-center flex-col right-0 bg-overlay flex  py-8 z-50">
+          <div className="flex flex-col gap-4">
+            <label htmlFor="email">Enter your email</label>
+            <input
+              type="text"
+              id="email"
+              className="w-[800px] pb-2 border-b outline-none placeholder:text-sm"
+              placeholder="Exp:email.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+            <div className="flex items-center justify-end w-full gap-4">
+              <Button
+                name="Submit"
+                style="px-4 py-2 rounded-md text-white bg-orange-500 my-2 text-semibold"
+                handleOnclick={handleForgotPassword}
+              />
+              <Button
+                name="Back"
+                handleOnclick={() => setisForgotPassWord(false)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
       <img
         src="https://kiddy.edu.vn/wp-content/uploads/2023/05/Hinh-nen-Songoku-4K-2K-cho-dien-thoai-may-tinh.jpg"
         alt=""
@@ -105,9 +143,12 @@ const Login = () => {
             name={isRegister ? "Register" : "Login"}
             handleOnclick={handleSubmit}
           />
-          <div className="flex items-center justify-between my-2 w-full text-sm">
+          <div className="flex items-center  justify-between my-2 w-full text-sm">
             {!isRegister && (
-              <span className="text-blue-500 hover:underline cursor-pointer">
+              <span
+                onClick={() => setisForgotPassWord(true)}
+                className="text-blue-500 hover:underline cursor-pointer"
+              >
                 Forgot your account?
               </span>
             )}

@@ -64,6 +64,10 @@ var userSchema = new mongoose.Schema(
     registerToken: {
       type: String,
     },
+    registrationToken: {
+      type: String,
+      default: null,
+    },
   },
   {
     timestamps: true,
@@ -87,7 +91,7 @@ userSchema.methods = {
       .createHash("sha256")
       .update(resetToken)
       .digest("hex");
-    this.passwordRestExpires = Date.now() + 15 * 60 * 1000;
+    this.passwordRestExpires = Date.now() + 15*60 * 1000;
     return resetToken;
   },
 };
