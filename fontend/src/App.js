@@ -8,7 +8,8 @@ import {
   DetailProduct,
   Service,
   Blog,
-  Product
+  Product,
+  FinalRegister,
 } from "./pages/public";
 import path from "./ultils/path";
 import { useDispatch } from "react-redux";
@@ -24,14 +25,17 @@ function App() {
         <Route path={path.PUBLIC} element={<Public />}>
           <Route path={path.HOME} element={<Home />} />
           <Route path={path.BLOG} element={<Blog />} />
-          <Route path={path.DETAIL_PRODUCT__PID__TITLE} element={<DetailProduct />} />
+          <Route
+            path={path.DETAIL_PRODUCT__PID__TITLE}
+            element={<DetailProduct />}
+          />
           <Route path={path.FAQ} element={<FAQ />} />
           <Route path={path.OUR_SERVICES} element={<Service />} />
-          <Route path={path.PRODUCT} element={<Product />} />
 
+          <Route path={path.PRODUCT} element={<Product />} />
         </Route>
         <Route path={path.LOGIN} element={<Login />} />
-
+        <Route path={path.FINAL_REGISTER} element={<FinalRegister />} />
       </Routes>
     </div>
   );

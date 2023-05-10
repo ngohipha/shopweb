@@ -8,10 +8,32 @@ const jwt = require("jsonwebtoken");
 const { sendMail } = require("../ultils/sendmail");
 const crypto = require("crypto");
 const { truncate } = require("fs/promises");
+const makeToken = require("uniqid");
+//register co dien
+// const register = asyncHandler(async (req, res) => {
+//   const { email, password, firstName, lastName } = req.body;
+//   if (!email || !password || !firstName || !lastName)
+//     return res.status(400).json({
+//       success: false,
+//       mes: "Missing inputs",
+//     });
+//   const user = await User.findOne({ email });
+//   if (user) throw new Error("User has existed!");
+//   else {
+//     const newUser = await User.create(req.body);
+//     return res.status(200).json({
+//       success: newUser ? true : false,
+//       mes: newUser
+//         ? "Register is successfully. Please go login"
+//         : "Something went wrong",
+//     });
+//   }
+// });
 
+// register xac thuc mail
 const register = asyncHandler(async (req, res) => {
-  const { email, password, firstName, lastName } = req.body;
-  if (!email || !password || !firstName || !lastName)
+  const { email, password, firstName, lastName, mobile } = req.body;
+  if (!email || !password || !firstName || !lastName || !mobile)
     return res.status(400).json({
       success: false,
       mes: "Missing inputs",
@@ -19,14 +41,38 @@ const register = asyncHandler(async (req, res) => {
   const user = await User.findOne({ email });
   if (user) throw new Error("User has existed!");
   else {
-    const newUser = await User.create(req.body);
-    return res.status(200).json({
-      success: newUser ? true : false,
-      mes: newUser
-        ? "Register is successfully. Please go login"
-        : "Something went wrong",
+    const token = makeToken();
+    res.cookie(
+      "dataregister",
+      { ...req.body, token },
+      {
+        httpOnly: true,
+        maxAge: 15 * 60 * 1000,
+      }
+    );
+    const html = `Xin vui long click vao link duoi day de xac thuc mat khau.Link nay se het han sau 15p<a href=${process.env.URL_SERVER}/api/user/finalregister/${token} > Clik here</a> `;
+    await sendMail({ email, html, subject: "Xác Thực Mail" });
+    return res.json({
+      success: true,
+      mes: "Please check your email to active account",
     });
   }
+});
+const finalRegister = asyncHandler(async (req, res) => {
+  const cookie = req.cookies;
+  const { token } = req.params;
+  if (!cookie || cookie?.dataregister?.token !== token)
+    return res.redirect(`${process.env.CLIENT_URL}/finalregister/failed`);
+  const newUser = await User.create({
+    email: cookie?.dataregister?.email,
+    password: cookie?.dataregister?.password,
+    mobile: cookie?.dataregister?.mobile,
+    firstName: cookie?.dataregister?.firstName,
+    lastName: cookie?.dataregister?.lastName,
+  });
+  if (newUser)
+    return res.redirect(`${process.env.CLIENT_URL}/finalregister/success`);
+  else return res.redirect(`${process.env.CLIENT_URL}/finalregister/failed`);
 });
 // refresh token => cap moi access token
 // access token => xac thuc ng dung , phan quyen nguoi dung
@@ -135,6 +181,7 @@ const forgotpassword = asyncHandler(async (req, res) => {
   const data = {
     email,
     html,
+    subject: "Forgot password",
   };
   const rs = await sendMail(data);
   return res.status(200).json({
@@ -271,4 +318,5 @@ module.exports = {
   updateUsersByAdmin,
   updateUserAddress,
   updateCart,
+  finalRegister,
 };
