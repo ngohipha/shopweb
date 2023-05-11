@@ -9,6 +9,8 @@ const { sendMail } = require("../ultils/sendmail");
 const crypto = require("crypto");
 const { truncate } = require("fs/promises");
 const makeToken = require("uniqid");
+const ms = require("ms");
+
 //register co dien
 // const register = asyncHandler(async (req, res) => {
 //   const { email, password, firstName, lastName } = req.body;
@@ -58,7 +60,15 @@ const makeToken = require("uniqid");
 //     });
 //   }
 // });
+// k xac thuc tu dong xoa khoi data sau 16p
+setInterval(async () => {
+  const now = new Date().getTime();
+  await User.deleteMany({
+    registrationExpiration: { $lt: now },
+  });
+}, 16 * 60 * 1000); // Xóa các tài khoản quá hạn mỗi giờ (3600000 ms)
 
+// Route đăng ký tài khoản
 const register = asyncHandler(async (req, res) => {
   const { email, password, firstName, lastName, mobile } = req.body;
   if (!email || !password || !firstName || !lastName || !mobile) {
@@ -67,12 +77,27 @@ const register = asyncHandler(async (req, res) => {
       mes: "Missing inputs",
     });
   }
+  if (!email.includes("@") || !email.endsWith(".com")) {
+    return res.status(400).json({
+      success: false,
+      mes: "Invalid email format",
+    });
+  }
+
+  if (password.length < 6 || password.length > 12) {
+    return res.status(400).json({
+      success: false,
+      mes: "Password must be between 6 and 12 characters",
+    });
+  }
 
   const user = await User.findOne({ email });
   if (user) {
     throw new Error("User has existed!");
   } else {
     const token = makeToken();
+    const now = new Date();
+    const expiration = now.getTime() + 15 * 60 * 1000;
     await User.create({
       email,
       password,
@@ -80,6 +105,7 @@ const register = asyncHandler(async (req, res) => {
       lastName,
       mobile,
       registrationToken: token,
+      registrationExpiration: expiration,
     });
     const html = `Xin vui lòng click vào link dưới đây để xác thực tài khoản. Link này sẽ hết hạn sau 15 phút: <a href=${process.env.URL_SERVER}/api/user/finalregister/${token}>Click here</a>`;
     await sendMail({ email, html, subject: "Xác Thực Mail" });
@@ -89,55 +115,41 @@ const register = asyncHandler(async (req, res) => {
     });
   }
 });
-// xác thực lưu trên database 
-// const finalRegister = asyncHandler(async (req, res) => {
-//   const { token } = req.params;
-//   const registrationData = await RegistrationData.findOne({ token });
-  
-//   if (!registrationData) {
-//     return res.redirect(`${process.env.CLIENT_URL}/finalregister/failed`);
-//   }
 
-//   const newUser = await User.create({
-//     email: registrationData.email,
-//     password: registrationData.password,
-//     mobile: registrationData.mobile,
-//     firstName: registrationData.firstName,
-//     lastName: registrationData.lastName,
-//   });
-
-//   if (newUser) {
-//     await RegistrationData.deleteOne({ token });
-//     return res.redirect(`${process.env.CLIENT_URL}/finalregister/success`);
-//   } else {
-//     return res.redirect(`${process.env.CLIENT_URL}/finalregister/failed`);
-//   }
-// });
-
+// Route xác thực tài khoản
 const finalRegister = asyncHandler(async (req, res) => {
   const { token } = req.params;
-  const user = await User.findOne({ registrationToken: token });
+  const now = new Date();
+
+  const user = await User.findOne({
+    registrationToken: token,
+    registrationExpiration: { $gt: now.getTime() },
+  });
 
   if (!user) {
     return res.redirect(`${process.env.CLIENT_URL}/finalregister/failed`);
   }
 
-  const newUser = await User.create({
-    email: user.email,
-    password: user.password,
-    mobile: user.mobile,
-    firstName: user.firstName,
-    lastName: user.lastName,
-  });
+  // const newUser = await User.create({
+  //   email: user.email,
+  //   password: user.password,
+  //   mobile: user.mobile,
+  //   firstName: user.firstName,
+  //   lastName: user.lastName,
+  // });
 
-  if (newUser) {
+  if (user) {
     user.registrationToken = undefined;
-    await User.deleteMany({ registrationToken: null });
+    user.registrationExpiration = undefined;
+    // await User.deleteMany({
+    //   registrationToken: { registrationToken: null },
+    // });
     return res.redirect(`${process.env.CLIENT_URL}/finalregister/success`);
   } else {
     return res.redirect(`${process.env.CLIENT_URL}/finalregister/failed`);
   }
 });
+
 //luu tren cookie
 // const finalRegister = asyncHandler(async (req, res) => {
 //   const cookie = req.cookies;

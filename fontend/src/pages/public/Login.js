@@ -30,9 +30,9 @@ const Login = () => {
     });
   };
   const [email, setEmail] = useState("");
-  // const handleEmailChange = (event) => {
-  //   setEmail(event.target.value);
-  // }
+  const handleEmailChange = (event) => {
+    setEmail(event.target.value);
+  }
   const handleForgotPassword = async () => {
     const response = await apiForgotPassword({ email });
     if(response.success){
@@ -80,7 +80,7 @@ const Login = () => {
               className="w-[800px] pb-2 border-b outline-none placeholder:text-sm"
               placeholder="Exp:email.com"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={handleEmailChange}
             />
             <div className="flex items-center justify-end w-full gap-4">
               <Button

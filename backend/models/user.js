@@ -7,11 +7,12 @@ var userSchema = new mongoose.Schema(
     firstName: {
       type: String,
       required: true,
-      index: true,
+
     },
     lastName: {
       type: String,
-      unique: true,
+      required: true,
+
     },
     email: {
       type: String,
@@ -65,6 +66,10 @@ var userSchema = new mongoose.Schema(
       type: String,
     },
     registrationToken: {
+      type: String,
+      default: null,
+    },
+    registrationExpiration: {
       type: String,
       default: null,
     },
